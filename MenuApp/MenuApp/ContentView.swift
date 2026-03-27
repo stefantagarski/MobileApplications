@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var viewModel: MenuViewModel
+
     var body: some View {
         TabView {
             MenuListView(title: "Drinks", items: MenuData.drinks)
@@ -26,4 +28,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(MenuViewModel())
 }

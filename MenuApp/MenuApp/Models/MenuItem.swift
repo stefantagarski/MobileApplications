@@ -10,6 +10,7 @@ struct MenuItem: Identifiable {
     let id = UUID()
     let name: String
     let subtitle: String
+    let description: String
     let systemIcon: String
     let color: Color
 }
