@@ -13,10 +13,17 @@ struct MenuDetailView: View {
 
     @State private var newCommentAuthor: String = ""
     @State private var newCommentText: String = ""
+    @State private var selectedImage: UIImage?
+    @State private var showImagePicker = false
+    @State private var imagePickerSource: UIImagePickerController.SourceType = .photoLibrary
+    @State private var photoGallery: [UIImage] = []
+    @State private var showActionSheet = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
+
+                // Hero icon
                 ZStack {
                     Circle()
                         .fill(item.color.opacity(0.15))
@@ -28,6 +35,7 @@ struct MenuDetailView: View {
                 }
                 .padding(.top, 20)
 
+                // Title & subtitle
                 VStack(spacing: 6) {
                     Text(item.name)
                         .font(.largeTitle)
@@ -38,15 +46,62 @@ struct MenuDetailView: View {
                         .foregroundColor(.secondary)
                 }
 
+                // Description
                 Text(item.description)
                     .font(.body)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
                     .foregroundColor(.secondary)
 
-                Divider()
-                    .padding(.horizontal)
+                Divider().padding(.horizontal)
 
+                // Photo section
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Photos")
+                            .font(.headline)
+                        Spacer()
+                        Button(action: { showActionSheet = true }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "camera.fill")
+                                Text("Add Photo")
+                                    .font(.subheadline)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 24)
+
+                    if photoGallery.isEmpty {
+                        Text("No photos yet. Tap Add Photo to share one!")
+                            .font(.callout)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 24)
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(photoGallery.indices, id: \.self) { index in
+                                    Image(uiImage: photoGallery[index])
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 120, height: 120)
+                                        .cornerRadius(10)
+                                        .clipped()
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                        }
+                    }
+                }
+
+                Divider().padding(.horizontal)
+
+                // Map section
+                RestaurantMapView(itemName: item.name, coordinate: item.coordinate)
+                    .padding(.horizontal, 24)
+
+                Divider().padding(.horizontal)
+
+                // Daily quote
                 VStack(spacing: 8) {
                     HStack {
                         Text("Quote of the Day")
@@ -59,8 +114,7 @@ struct MenuDetailView: View {
                     }
 
                     if viewModel.isLoadingQuote {
-                        ProgressView()
-                            .padding()
+                        ProgressView().padding()
                     } else if !viewModel.dailyQuote.isEmpty {
                         Text(viewModel.dailyQuote)
                             .font(.callout)
@@ -75,9 +129,9 @@ struct MenuDetailView: View {
                 }
                 .padding(.horizontal, 24)
 
-                Divider()
-                    .padding(.horizontal)
+                Divider().padding(.horizontal)
 
+                // Comments section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Comments")
                         .font(.headline)
@@ -143,6 +197,28 @@ struct MenuDetailView: View {
         .onAppear {
             if viewModel.dailyQuote.isEmpty {
                 viewModel.fetchQuote()
+            }
+        }
+        .confirmationDialog("Add Photo", isPresented: $showActionSheet) {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button("Take Photo") {
+                    imagePickerSource = .camera
+                    showImagePicker = true
+                }
+            }
+            Button("Choose from Library") {
+                imagePickerSource = .photoLibrary
+                showImagePicker = true
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(sourceType: imagePickerSource, selectedImage: $selectedImage)
+        }
+        .onChange(of: selectedImage) { oldValue, newValue in
+            if let image = newValue {
+                photoGallery.append(image)
+                selectedImage = nil
             }
         }
     }
